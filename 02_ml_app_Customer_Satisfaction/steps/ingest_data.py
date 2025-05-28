@@ -23,4 +23,7 @@ class IngestData:
 def get_data(data_base_dir):
     ingest_data = IngestData(data_base_dir)
     data_path = ingest_data.get_data_path()
+    print(data_path)
     return pd.read_csv(data_path) 
+
+get_data("data")

@@ -4,7 +4,7 @@ from steps.clean_data import clean_data
 from steps.train_model import train_model
 from steps.validate_model import validate_model
 
-@pipeline
+@pipeline(enable_cache=True)
 def train_pipeline(data_base_dir):
     # Ingest data
     df = get_data(data_base_dir)

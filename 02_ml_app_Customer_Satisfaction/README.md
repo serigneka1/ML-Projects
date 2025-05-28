@@ -63,10 +63,10 @@ Versioning des modèles avec MLflow
 ## 🤝 Contribuer
 Les contributions sont les bienvenues ! Merci de proposer une issue ou une pull request.
 
----
+
 ## Licence
 Ce projet est sous licence MIT.
 
---- 
+
 ## Auteur
 Serigne - GitHub | kaserigne69@gmail.com - Linkedin | linkedin.com/in/serigneka
