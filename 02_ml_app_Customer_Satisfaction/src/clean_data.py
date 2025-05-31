@@ -1,9 +1,10 @@
-from steps.ingest_data import get_data
 from abc import ABC, abstractmethod
 from typing import Tuple, Any
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 import logging
+from typing import Union
 
 
 
@@ -13,7 +14,7 @@ class CleanDataStrategy(ABC):
     Appliquer la strategy abstract
     """
     @abstractmethod
-    def clean_data(self, data: pd.DataFrame) -> Any:
+    def handle_data(self, data: pd.DataFrame):
         """ 
             Applique un certain nombre d'étape de preprocessing sur le dataframe fournie
         Args:
@@ -30,9 +31,9 @@ class PreprocessingStrategy(CleanDataStrategy):
         Applique un ensemble de méthode de nétoyage (valeurs manquantes, renommage colonnes
         encodage des données catégorielles)
     Args:
-        CleanDataStrategy (_type_): recoit en entrée la stratégie abstract
+        CleanDataStrategy (class strategy): recoit en entrée la stratégie abstract
     """
-    def clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
+    def handle_data(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Nettoie et encode le DataFrame fourni.
 
@@ -42,50 +43,70 @@ class PreprocessingStrategy(CleanDataStrategy):
         Returns:
             pd.DataFrame: DataFrame nettoyé et encodé.
         """
-
         df = data.copy()
-         # Remplacer les valeurs manquantes
+
+        # Nettoyage des valeurs manquantes
         try:
-            df["Arrival Delay in Minutes"] = df["Arrival Delay in Minutes"].bfill()
-            logging.info("Valeur manquante remplacée par la valeur suivante dans la même colonne ...")
+            df = df[df["Arrival Delay in Minutes"].notna()]
+            logging.info("Valeurs manquantes supprimées dans la colonne: 'Arrival Delay in Minutes'.")
         except Exception as e:
-            logging.error(f"Il y a une erreur pendant la gestion des valeurs manquantes: \n {e}")
+            logging.error(f"Erreur pendant la gestion des valeurs manquantes : {e}")
             raise
-       
+        df.drop(columns=["Gender"], inplace=True, errors="ignore")
 
         # Renommer les colonnes en français
-        colonnes_fr = [
-            'satisfaction', 'genre', 'type_client', 'age', 'type_voyage', 'classe',
-            'distance_vol', 'confort_siege', 'horaire_dep_arr', 'repas_boisson',
-            'emplacement_porte', 'wifi_vol', 'divertissement_vol', 'support_en_ligne',
-            'facilité_reservation', 'service_bord', 'espace_jambes', 'gestion_bagages',
-            'service_enregistrement', 'propreté', 'embarquement_en_ligne',
-            'retard_depart_min', 'retard_arrivée_min'
-        ]
-        try:
-            df.columns = colonnes_fr
-            logging.info("Renommage des colonnes réussit ...")
-        except Exception as e:
-            logging.info(f"Il y a un problème pendant le renommage des colonnes en francais: {e}")
-            raise
+        rename_dict = {
+        'satisfaction': 'satisfaction',
+        'Customer Type': 'type_client',
+        'Age': 'age',
+        'Type of Travel': 'type_voyage',
+        'Class': 'classe_vol',
+        'Flight Distance': 'distance_vol',
+        'Seat comfort': 'confort_siege',
+        'Departure/Arrival time convenient': 'ponctualite',
+        'Food and drink': 'repas_boisson',
+        'Gate location': 'prox_porte',
+        'Inflight wifi service': 'wifi_bord',
+        'Inflight entertainment': 'divertissement',
+        'Online support': 'support_enligne',
+        'Ease of Online booking': 'resa_facile',
+        'On-board service': 'service_bord',
+        'Leg room service': 'espace_jambes',
+        'Baggage handling': 'gestion_bagages',
+        'Checkin service': 'enregistrement',
+        'Cleanliness': 'proprete',
+        'Online boarding': 'embarquement',
+        'Departure Delay in Minutes': 'retard_dep',
+        'Arrival Delay in Minutes': 'retard_arr'
+        }
 
+        try:
+            df.rename(columns=rename_dict, inplace=True)
+            logging.info("Renommage des colonnes réussi.")
+        except Exception as e:
+            logging.error(f"Erreur pendant le renommage des colonnes : {e}")
+            raise
+        #df = df.drop(columns=['genre'], axis=1)
         # Encodage
         try:
+            # Exemple : encode le genre
+            # df["genre"] = df["genre"].map({"Male": 1, "Female": 0})
+
             df["satisfaction"] = df["satisfaction"].apply(lambda x: 1 if x == 'satisfied' else 0)
-            df["genre"] = df["genre"].apply(lambda x: 1 if x == 'Male' else 0)
             df["type_client"] = df["type_client"].apply(lambda x: 1 if x == 'Loyal Customer' else 0)
             df["type_voyage"] = df["type_voyage"].apply(lambda x: 1 if x == 'Personal Travel' else 0)
-            df["classe"] = df["classe"].map({'Eco': 1, 'Business': 2, 'Eco Plus': 3})
-            logging.info("Encodage du dataset terminé !!!")
+            df["classe_vol"] = df["classe_vol"].map({
+                'Eco': 1,
+                'Business': 2,
+                'Eco Plus': 3
+            })
+
+            logging.info("Encodage des colonnes terminé.")
         except Exception as e:
-            logging.error(f"Il y a un problème pendant l'encodage des colonnes catégorielles: {e}")
+            logging.error(f"Erreur pendant l'encodage des colonnes : {e}")
             raise
 
-
         return df
-
-
-
 
 class DivideDataStrategy(CleanDataStrategy):
     """Applique la stratégie de division des données
@@ -93,10 +114,8 @@ class DivideDataStrategy(CleanDataStrategy):
     Args:
         CleanDataStrategy (_type_): s'applique sur les données propres
     """
-    def __init__(self, preprocessing_strategy: PreprocessingStrategy):
-        self.preprocessing_strategy = preprocessing_strategy
 
-    def clean_data(self, data) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    def handle_data(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray, np.ndarray]:
         """ applique les trannsformations nécessaires pour faire la division des données
 
         Args:
@@ -105,7 +124,7 @@ class DivideDataStrategy(CleanDataStrategy):
         Returns:
             Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]: retourne des échantillons de données d'entraienement et de tests
         """
-        df = self.preprocessing_strategy.clean_data(data)
+        df = data.copy()
         X = df.drop("satisfaction", axis=1)
         y = df["satisfaction"]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -125,7 +144,7 @@ class DataCleansingStrategy:
         """
         self.strategy = strategy
 
-    def transform_data(self, data: pd.DataFrame) -> Any:
+    def handle_data(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray, np.ndarray]:
         """
         Exécute la stratégie de nettoyage choisie.
         Args:
@@ -134,16 +153,10 @@ class DataCleansingStrategy:
         Returns:
             Any: Résultat de la stratégie -> (DataFrame ou tuple de DataFrames/Series).
         """
-        return self.strategy.clean_data(data)
+        return self.strategy.handle_data(data)
 
 
 
 
-# Utilisation
-# data = get_data()
 
-# preprocess_strategy = PreprocessingStrategy()
-# divide_data_strategy = DivideDataStrategy(preprocess_strategy)
 
-# data_cleansing = DataCleansingStrategy(divide_data_strategy)  
-# X_train, X_test, y_train, y_test = data_cleansing.transform_data(data)
