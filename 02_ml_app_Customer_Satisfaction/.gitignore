@@ -1,0 +1,29 @@
+# Fichiers de données et binaires
+*.csv
+*.pkl
+*.h5
+*.zip
+*.log
+
+# Fichiers Python compilés
+*.pyc
+__pycache__/
+
+# Répertoires temporaires et caches
+data/
+models/
+
+# Environnements virtuels
+.venv/
+venv/
+
+# IDE et éditeurs
+.vscode/
+.idea/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Autres fichiers inutiles
+.DS_Store
+Thumbs.db
