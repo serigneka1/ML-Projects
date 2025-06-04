@@ -1,13 +1,17 @@
-from zenml import step
-import pandas as pd
-from src.model_dev import TrainRegressionModel
-from sklearn.linear_model import LogisticRegression
-from sklearn.base import ClassifierMixin
-from configuration import ModelNameConfig
 import logging
 
+from zenml import step
+import mlflow
+import pandas as pd
+from zenml.client import Client
+from sklearn.linear_model import LogisticRegression
+from sklearn.base import ClassifierMixin
 
-@step
+from src.model_dev import TrainRegressionModel
+from configuration import ModelNameConfig
+
+experiment_tracker = Client().active_stack.experiment_tracker
+@step(experiment_tracker = experiment_tracker.name)
 def train_model(
          X_train: pd.DataFrame,
          y_train: pd.DataFrame,
@@ -22,6 +26,7 @@ def train_model(
     try:
         if config.model_name == "LogisticRegression":
             model = TrainRegressionModel()
+            mlflow.sklearn.autolog()
             trained_model = model.train_model(X_train, y_train)
             return trained_model
         else:

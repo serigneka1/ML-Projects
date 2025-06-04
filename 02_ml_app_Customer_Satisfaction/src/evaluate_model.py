@@ -21,11 +21,6 @@ class EvaluationStrategy(ABC):
         pass
 
 
-class MSE(EvaluationStrategy):
-    """
-    Evaluation avec la méthode du carré de moyenne des erreurs MSE
-    """
-
 class Accuracy(EvaluationStrategy):
 
     def calculate_score(self, y_true: pd.Series, y_pred: pd.Series) -> float:

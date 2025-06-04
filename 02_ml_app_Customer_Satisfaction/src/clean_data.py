@@ -7,8 +7,6 @@ import logging
 from typing import Union
 
 
-
-
 class CleanDataStrategy(ABC):
     """
     Appliquer la strategy abstract
@@ -24,7 +22,6 @@ class CleanDataStrategy(ABC):
             Any: retourn un autre dataframe ou d'autre types
         """
         pass
-
 
 class PreprocessingStrategy(CleanDataStrategy):
     """
@@ -132,7 +129,6 @@ class DivideDataStrategy(CleanDataStrategy):
 
         return X_train, X_test, y_train, y_test
         
-
 class DataCleansingStrategy:
     """Applique la stratégie de nettoyage choie
     """

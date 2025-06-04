@@ -59,7 +59,24 @@ python run_pipeline.py
 zenml login --local . #  si port non précisé alors le dashboard à visiter ici localhost:8237
 zenml login --local --blocking . # pour windows ajouter --locking pour forcer le blockage
 ```
-
+4. ## Deploiement 
+1. #### Creer le stack de suivi mlflow
+```bash
+zenml experiment-tracker register [NOM_DU_TRACKER] --flavor=mlflow # Définir un tracker
+zenml integration install mlflow # Installer l'integration de mlflow à zenml
+zenml stack register app_mlflow_stack -o default -a default -e app_mlflow_tracker    # Créer sa propre stack mlflow qui va contenir le tarcker précédemment créé
+zenml stack set app_mlflow_stack # Activer sette stack créée
+zenml up --blocking
+```
+2. #### Identifier le chemin vers les logs> dossiers ./mlruns et ensuite configurer un different backend pour avoir le ui de de tracking de mlflow
+````bash
+# Dans run_pipeline.py ajouter ce code
+tracking_uri = experiment_tracker = Client().active_stack.experiment_tracker.get_tracking_uri()
+print(f"MLflow Tracking URI: {tracking_uri}") # pour voir le chemin de là où se trouve le uri
+# Ensuite aller sur le uri mlflow avec la commande shell suivante
+mlflow server --backend-store-uri [tracking_uri] # pour moi c'est la command suivante
+mlflow server --backend-store-uri "file:C:\Users\serig\AppData\Roaming\zenml\local_stores\39d1f19d-a4a2-41db-b382-fc4e7ba3ee06\mlruns" # Et ça renvoie l'adresse de monitoring mlflow. Pour moi c'est localhost:5000
+```
 ## Fonctionnalités (à venir)
 Backend avec FastAPI
 Frontend avec HTML/CSS/bootstrap
